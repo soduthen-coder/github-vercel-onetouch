@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>원터치 배포 — 내 웹페이지를 인터넷에 올리기</title>
+<meta name="description" content="깃허브에 올리고 버셀로 인터넷 주소를 만들기까지, 명령 한 줄. 초보자를 위한 원터치 배포 도구.">
+<meta property="og:title" content="원터치 배포 — 내 웹페이지를 인터넷에 올리기">
+<meta property="og:description" content="깃허브에 올리고 버셀로 인터넷 주소를 만들기까지, 명령 한 줄.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{
+  color-scheme:light;
+  --paper:#ffffff;
+  --ink:#171613;
+  --ink-2:#57544c;
+  --ink-3:#8c887e;
+  --rule:#e6e3da;
+  --wash:#faf9f5;
+  --hi:#ffd400;
+  --hi-soft:#fff3bf;
+  --amber:#8a6200;
+  --night:#1a1813;
+  --sans:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,
+         'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --mono:'SF Mono',SFMono-Regular,Menlo,Consolas,'D2Coding',monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:17px;line-height:1.75;letter-spacing:-.01em;
+  /* 한글은 단어 중간에서 줄이 바뀌면 읽기 나쁘다. 띄어쓰기에서만 끊기게 한다. */
+  word-break:keep-all;overflow-wrap:break-word;
+  -webkit-font-smoothing:antialiased;
+}
+/* .wrap 은 '가운데 정렬 + 가로 여백' 만 맡는다.
+   세로 여백까지 여기서 주면, header/section 쪽 padding 을 덮어써서
+   여백이 통째로 사라진다. (실제로 한 번 그렇게 만들어 놓고 화면을 보고 발견했다.)
+   그래서 세로 여백은 아래에서 header.wrap / section.wrap 처럼
+   클래스를 함께 써서 우선순위를 맞춘다. */
+.wrap{max-width:720px;margin-left:auto;margin-right:auto;padding-left:24px;padding-right:24px}
+
+/* ── 히어로 ─────────────────────────────────────────────── */
+header.wrap{padding-top:92px;padding-bottom:76px}
+h1{
+  font-size:clamp(30px,6.2vw,46px);font-weight:800;line-height:1.28;
+  letter-spacing:-.035em;margin:0 0 20px;
+}
+/* 형광펜: 노랑은 '채움' 으로만 쓴다. 흰 배경 위 노란 글씨는 읽히지 않는다. */
+.mark{
+  background:linear-gradient(to top,var(--hi) 42%,transparent 42%);
+  padding:0 2px;
+}
+.lede{font-size:17.5px;color:var(--ink-2);margin:0 0 34px;max-width:33em}
+
+/* 명령어 = 이 페이지의 주인공 */
+.cmd{
+  background:var(--night);border-radius:12px;padding:20px 22px;
+  display:flex;align-items:center;gap:16px;
+}
+.cmd code{
+  font-family:var(--mono);font-size:clamp(15px,3.1vw,20px);
+  color:var(--hi);flex:1;min-width:0;overflow-x:auto;white-space:nowrap;
+  letter-spacing:0;
+  /* 아래 인라인 코드 규칙(연노랑 배경)이 여기까지 새어 들어오지 않게 막는다 */
+  background:none;padding:0;border-radius:0;
+}
+.cmd code .dim{color:#7d7669}
+.copy{
+  flex:none;border:0;border-radius:7px;background:var(--hi);color:var(--ink);
+  font-family:var(--sans);font-size:14px;font-weight:700;padding:9px 15px;
+  cursor:pointer;letter-spacing:-.01em;
+}
+.copy:hover{background:#ffdd33}
+.copy:focus-visible{outline:3px solid var(--hi);outline-offset:3px}
+.copy[data-done="1"]{background:#2f2c25;color:var(--hi)}
+.cmd-note{font-size:14.5px;color:var(--ink-3);margin:12px 0 0}
+
+/* ── 섹션 ───────────────────────────────────────────────── */
+section.wrap{padding-top:60px;padding-bottom:60px;border-top:1px solid var(--rule)}
+h2{font-size:23px;font-weight:800;letter-spacing:-.03em;margin:0 0 8px;line-height:1.4}
+.sub{color:var(--ink-2);margin:0 0 26px;font-size:16px}
+p{margin:0 0 16px}
+strong{font-weight:700}
+
+/* 전 → 후. 마지막 줄(결과)만 형광펜으로 집는다. */
+.flow{margin:0;padding:0;border-left:3px solid var(--rule)}
+.flow div{padding:8px 0 8px 20px;color:var(--ink-2);font-size:16px}
+.flow div:last-child{
+  color:var(--ink);font-weight:700;font-family:var(--mono);font-size:15px;
+  letter-spacing:0;box-shadow:inset 3px 0 0 var(--hi);
+}
+
+/* 준비물 — 순서가 아니라 목록이므로 번호를 쓰지 않는다 */
+.need{list-style:none;margin:0;padding:0}
+.need li{
+  display:flex;gap:14px;align-items:baseline;
+  padding:13px 0;border-bottom:1px solid var(--rule);
+}
+.need li:last-child{border-bottom:0}
+.need b{flex:none;width:104px;font-weight:700}
+.need span{color:var(--ink-2);font-size:15.5px}
+.need a{color:var(--amber);text-decoration:underline;text-underline-offset:3px}
+
+/* 시작하기 — 실제 순서이므로 번호가 정보가 된다 */
+.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+.steps li{position:relative;padding:0 0 30px 46px;counter-increment:s}
+.steps li::before{
+  content:counter(s);position:absolute;left:0;top:1px;
+  width:28px;height:28px;border-radius:50%;background:var(--hi);
+  font-size:14px;font-weight:800;display:grid;place-items:center;
+}
+.steps li:not(:last-child)::after{
+  content:"";position:absolute;left:13.5px;top:32px;bottom:8px;
+  width:1px;background:var(--rule);
+}
+.steps h3{font-size:17px;font-weight:700;margin:0 0 6px;letter-spacing:-.02em}
+.steps p{color:var(--ink-2);font-size:15.5px;margin:0}
+
+pre{
+  background:var(--wash);border:1px solid var(--rule);border-radius:9px;
+  padding:14px 16px;overflow-x:auto;margin:12px 0 0;
+}
+pre code{font-family:var(--mono);font-size:14px;color:var(--ink);letter-spacing:0}
+:not(pre)>code{
+  font-family:var(--mono);font-size:.88em;background:var(--hi-soft);
+  padding:2px 6px;border-radius:4px;letter-spacing:0;
+}
+
+/* 다음 명령 표 */
+table{width:100%;border-collapse:collapse;font-size:15.5px}
+td{padding:11px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+td:first-child{width:40%;padding-right:16px}
+td:first-child code{background:none;padding:0;font-size:14px;color:var(--ink)}
+tr:last-child td{border-bottom:0}
+
+/* 경고 */
+.warn{background:var(--hi-soft);border-radius:10px;padding:18px 20px;margin:0}
+.warn p{margin:0;font-size:15.5px}
+.warn p+p{margin-top:9px}
+
+footer.wrap{padding-top:48px;padding-bottom:76px;border-top:1px solid var(--rule);color:var(--ink-3);font-size:14.5px}
+footer a{color:var(--amber)}
+.ghlink{
+  display:inline-block;margin-top:6px;font-weight:700;font-size:16px;
+  color:var(--ink);text-decoration:none;
+  border-bottom:3px solid var(--hi);padding-bottom:1px;
+}
+.ghlink:hover{background:var(--hi-soft)}
+
+@media (max-width:560px){
+  body{font-size:16px}
+  header.wrap{padding-top:64px;padding-bottom:52px}
+  section.wrap{padding-top:46px;padding-bottom:46px}
+  .need li{flex-direction:column;gap:3px}
+  .need b{width:auto}
+  .cmd{flex-direction:column;align-items:stretch;gap:12px}
+  .copy{width:100%;padding:11px}
+  td:first-child{width:auto;display:block;padding-bottom:2px}
+  td{display:block;border-bottom:0}
+  tr{display:block;border-bottom:1px solid var(--rule);padding:10px 0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <h1>웹페이지를 만들었는데<br><span class="mark">인터넷에 올리는 법</span>을 모르겠다면</h1>
+  <p class="lede">깃허브에 올리고, 버셀로 주소를 만들고, 잘 열리는지 확인하는 것까지
+    명령 한 줄이면 끝납니다. 가입만 되어 있으면 20초 걸립니다.</p>
+
+  <div class="cmd">
+    <code id="cmd"><span class="dim">$</span> bash start.sh</code>
+    <button class="copy" id="copy" type="button">복사</button>
+  </div>
+  <p class="cmd-note">터미널에 붙여넣고 엔터. 이게 전부입니다.</p>
+</header>
+
+<main>
+<section class="wrap">
+  <h2>무엇이 달라지나요</h2>
+  <p class="sub">지금 컴퓨터 안에만 있는 파일이, 누구나 열 수 있는 주소가 됩니다.</p>
+  <div class="flow">
+    <div>내 컴퓨터의 index.html</div>
+    <div>깃허브 저장소에 업로드</div>
+    <div>버셀이 인터넷에 공개</div>
+    <div>https&#58;//내사이트.vercel.app</div>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>먼저 갖춰야 할 네 가지</h2>
+  <p class="sub">모두 무료입니다. 이미 있는 것은 건너뛰세요. 도구가 알아서 확인합니다.</p>
+  <ul class="need">
+    <li><b>깃허브 계정</b><span>파일을 보관하는 곳 · <a href="https://github.com/signup">가입하기</a></span></li>
+    <li><b>버셀 계정</b><span>인터넷 주소를 만들어 주는 곳 · <a href="https://vercel.com/signup">가입하기</a> (Continue with GitHub 을 고르면 빠릅니다)</span></li>
+    <li><b>git</b><span>파일을 올려 주는 프로그램 · <a href="https://git-scm.com/downloads">받기</a></span></li>
+    <li><b>Node.js</b><span>배포 도구를 설치하는 데 필요 · <a href="https://nodejs.org">받기</a></span></li>
+  </ul>
+</section>
+
+<section class="wrap">
+  <h2>시작하기</h2>
+  <p class="sub">윈도우는 <strong>Git Bash</strong>, 맥과 리눅스는 기본 터미널에서 합니다.</p>
+  <ol class="steps">
+    <li>
+      <h3>도구 내려받기</h3>
+      <p>깃허브에서 이 도구를 통째로 가져옵니다.</p>
+      <pre><code>git clone https://github.com/soduthen-coder/github-vercel-onetouch.git
+cd github-vercel-onetouch</code></pre>
+    </li>
+    <li>
+      <h3>실행하기</h3>
+      <p>모자란 도구를 설치하고, 로그인을 안내하고, 첫 사이트를 만들어 배포합니다.
+         브라우저에서 로그인 승인만 해 주시면 됩니다.</p>
+      <pre><code>bash start.sh</code></pre>
+    </li>
+    <li>
+      <h3>주소 받기</h3>
+      <p>끝나면 주소가 나옵니다. 실제로 열리는지까지 확인한 결과를 함께 보여 줍니다.</p>
+    </li>
+  </ol>
+  <p style="color:var(--ink-3);font-size:15px;margin:0">
+    윈도우에서 터미널이 어렵다면 <code>start.cmd</code> 를 더블클릭해도 됩니다.</p>
+</section>
+
+<section class="wrap">
+  <h2>클로드에게 시킬 수도 있습니다</h2>
+  <p class="sub">Claude Code 를 쓰신다면 명령어를 외울 필요가 없습니다.
+    저장소 주소를 붙여넣고 말로 시키면 됩니다.</p>
+  <table>
+    <tr><td>새 사이트 만들어 줘</td><td>저장소를 만들고 배포까지 합니다</td></tr>
+    <tr><td>고친 거 올려 줘</td><td>수정한 내용을 반영합니다</td></tr>
+    <tr><td>잠가 줘 / 공개해 줘</td><td>나만 보기와 전체 공개를 오갑니다</td></tr>
+    <tr><td>내려 줘</td><td>저장소와 사이트를 지웁니다</td></tr>
+  </table>
+  <p style="margin:22px 0 0;color:var(--ink-3);font-size:15px">
+    한글 이름을 말해도 됩니다. <code>포트폴리오</code> 라고 하면
+    저장소 이름은 <code>poteupolrio</code> 로 알아서 바꾸고, 화면에 보이는 제목은
+    한글 그대로 둡니다.</p>
+</section>
+
+<section class="wrap">
+  <h2>직접 쓸 때의 명령</h2>
+  <p class="sub">첫 배포를 마친 뒤부터 쓰는 것들입니다.</p>
+  <table>
+    <tr><td><code>bash new-site.sh 이름</code></td><td>사이트를 하나 더 만듭니다</td></tr>
+    <tr><td><code>bash publish.sh "메모"</code></td><td>고친 내용을 올립니다</td></tr>
+    <tr><td><code>bash protect.sh 이름 on</code></td><td>나만 볼 수 있게 잠급니다</td></tr>
+    <tr><td><code>bash protect.sh 이름 off</code></td><td>다시 공개합니다</td></tr>
+    <tr><td><code>bash remove-site.sh 이름</code></td><td>저장소와 사이트를 지웁니다</td></tr>
+  </table>
+</section>
+
+<section class="wrap">
+  <h2>딱 하나만 기억하세요</h2>
+  <div class="warn">
+    <p><strong>저장소를 비공개로 뒀다고 사이트까지 가려지는 것은 아닙니다.</strong>
+      코드와 웹페이지는 따로 놉니다. 배포된 주소는 아는 사람이면 누구나 열 수 있습니다.</p>
+    <p>남에게 보여 줄 것이 아니라면 <code>bash protect.sh 이름 on</code> 으로 잠그세요.
+      반대로 과제처럼 남이 열어야 하는 것은 잠그면 안 됩니다.</p>
+  </div>
+</section>
+</main>
+
+<footer class="wrap">
+  <p style="margin:0 0 4px">소스 코드와 자세한 설명</p>
+  <a class="ghlink" href="https://github.com/soduthen-coder/github-vercel-onetouch">github.com/soduthen-coder/github-vercel-onetouch</a>
+  <p style="margin:20px 0 0">만들면서 실제로 부딪힌 문제들(한글 이름이 깨지는 것, 잠근 줄 알았는데 열려 있던 것,
+    삭제 직후 확인이 빗나가던 것)은 모두 코드 주석에 적어 두었습니다.</p>
+</footer>
+
+<script>
+  // 복사 버튼: 사람이 누른 동작에 대한 응답이므로 상태를 분명히 보여 준다.
+  var btn = document.getElementById('copy');
+  btn.addEventListener('click', function () {
+    var text = 'bash start.sh';
+    var done = function () {
+      btn.textContent = '복사됨';
+      btn.dataset.done = '1';
+      setTimeout(function () { btn.textContent = '복사'; btn.dataset.done = ''; }, 1800);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else { fallback(); }
+    function fallback() {
+      var t = document.createElement('textarea');
+      t.value = text; t.setAttribute('readonly', '');
+      t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); done(); }
+      catch (e) { btn.textContent = '복사 실패'; setTimeout(function(){btn.textContent='복사';}, 1800); }
+      document.body.removeChild(t);
+    }
+  });
+</script>
+</body>
+</html>

@@ -35,9 +35,12 @@ if [ -z "$NAME" ]; then
   die "사용법: bash new-site.sh <영문-이름> [--title \"제목\"] [--public]"
 fi
 shift
-check_name "$NAME"          # 한글·대문자·특수문자면 여기서 멈춥니다
 
-TITLE="$NAME"               # --title 을 안 주면 이름을 그대로 제목으로 씁니다
+# 화면에 보이는 제목은 사용자가 준 그대로 씁니다 (한글이어도 됩니다).
+# 저장소·폴더 이름만 깃허브가 받는 형태로 바꿉니다.
+TITLE="$NAME"
+NAME="$(check_name "$NAME")"
+
 VIS="--private"             # 기본은 비공개. 실수로 공개되는 사고를 막기 위해서입니다
 PARENT=""                   # 비어 있으면 아래에서 설정값을 씁니다
 
@@ -75,28 +78,41 @@ cat > index.html <<HTML
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>$TITLE</title>
 <style>
-/* 밝은 화면/어두운 화면 둘 다 대응합니다 */
-:root{color-scheme:light dark;--bg:#f4f3f0;--card:#fcfcfb;--line:#dededa;
-  --t1:#0b0b0b;--t2:#52514e;--accent:#1d5a4c}
-@media (prefers-color-scheme:dark){:root{--bg:#121211;--card:#1a1a19;--line:#35352f;
-  --t1:#fff;--t2:#c3c2b7;--accent:#4e9d86}}
+/* 노랑은 '채움' 으로만 씁니다. 흰 배경 위 노란 글씨는 읽히지 않습니다. */
+:root{
+  color-scheme:light;
+  --paper:#fff; --ink:#171613; --ink-2:#57544c; --ink-3:#8c887e;
+  --rule:#e6e3da; --hi:#ffd400; --hi-soft:#fff3bf;
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--t1);font-size:15px;line-height:1.6;
-  font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;
-  display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
-  padding:30px 32px;max-width:560px;width:100%}
-h1{font-size:22px;margin:0 0 8px;letter-spacing:-.015em}
-p{margin:0;color:var(--t2);font-size:13.5px}
-code{background:var(--bg);padding:1.5px 5px;border-radius:4px;font-size:12px}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,
+    'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  font-size:17px;line-height:1.75;letter-spacing:-.01em;
+  word-break:keep-all;               /* 한글이 단어 중간에서 끊기지 않게 */
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;padding:28px;
+}
+main{max-width:560px;width:100%}
+h1{font-size:clamp(26px,6vw,36px);font-weight:800;letter-spacing:-.035em;
+   line-height:1.3;margin:0 0 14px}
+.mark{background:linear-gradient(to top,var(--hi) 40%,transparent 40%);padding:0 2px}
+p{margin:0 0 10px;color:var(--ink-2);font-size:16px}
+.hint{color:var(--ink-3);font-size:14.5px;border-top:1px solid var(--rule);
+      margin-top:22px;padding-top:16px}
+code{font-family:'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;
+     font-size:.88em;background:var(--hi-soft);padding:2px 6px;border-radius:4px;
+     letter-spacing:0}
 </style>
 </head>
 <body>
-  <div class="card">
-    <h1>$TITLE</h1>
-    <p>이 파일(<code>index.html</code>)을 고치고 <code>publish.sh</code> 를 실행하면
-       깃허브와 버셀에 함께 반영됩니다.</p>
-  </div>
+  <main>
+    <h1><span class="mark">$TITLE</span></h1>
+    <p>여기에 내용을 채우세요.</p>
+    <p class="hint"><code>index.html</code> 을 고친 뒤
+       <code>publish.sh</code> 를 실행하면 깃허브와 버셀에 함께 반영됩니다.</p>
+  </main>
 </body>
 </html>
 HTML

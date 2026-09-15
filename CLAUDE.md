@@ -1,4 +1,4 @@
-# 버셀 원터치 — Claude 실행 지침
+# 원터치 배포 — Claude 실행 지침
 
 이 파일은 **Claude Code 가 자동으로 읽습니다.** 사용자가 설명하지 않아도
 아래 규칙대로 움직이세요.
@@ -16,8 +16,8 @@
 
 ```bash
 # 1) 내려받기 — 이미 있으면 건너뜁니다
-git clone https://github.com/<owner>/vercel-one-touch.git
-cd vercel-one-touch
+git clone https://github.com/<owner>/github-vercel-onetouch.git
+cd github-vercel-onetouch
 
 # 2) 원터치 실행 — 준비부터 배포까지 한 번에
 bash start.sh
@@ -72,11 +72,15 @@ bash start.sh
 `Detected linked project does not have "id"` 오류를 냅니다. **실제로 겪은
 문제입니다.**
 
-사용자가 한글 이름을 말하면 **되묻지 말고 영문 이름을 직접 지어 쓰고,
-한글은 `--title` 로 넘긴 뒤 그렇게 했다고 알려주세요.**
+**이제 도구가 알아서 바꿉니다.** 한글 이름을 그대로 넘겨도 됩니다.
+`lib/slug.js` 가 소리나는 대로 로마자로 옮기고, 무엇으로 바뀌었는지 화면에
+알려 줍니다. 화면에 보이는 제목은 한글 그대로 남습니다.
 
-- "포트폴리오 만들어줘" → `new-site.sh portfolio --title "포트폴리오"`
-- "카페 홈페이지" → `new-site.sh cafe-home --title "카페 홈페이지"`
+- "포트폴리오 만들어줘" → `new-site.sh 포트폴리오`  (저장소는 `poteupolrio`)
+- "대전 서구 상권" → 저장소는 `daejeon-seogu-sanggwon`
+
+더 읽기 좋은 영문 이름이 떠오르면 그걸 쓰고 `--title` 로 한글을 주어도 됩니다.
+예) `new-site.sh portfolio --title "포트폴리오"`
 
 ### 2. 기본은 비공개, 남이 봐야 하면 공개
 
@@ -172,3 +176,23 @@ CLI 는 사용자가 직접 승인한 권한으로 움직여서 예측 가능합
 
 그래서 이 도구는 연동 대신 **스크립트가 직접 배포**합니다. 결과는 같고
 사람 손이 들지 않습니다. 사용자가 원하면 연동을 켜도 되지만 필수가 아닙니다.
+
+
+---
+
+## 정적 사이트 전용이 아닙니다
+
+`new-site.sh` 가 만드는 **뼈대**가 HTML 한 장일 뿐, 도구 자체는 버셀이 다루는
+것은 다 배포합니다. 서버리스 함수(`api/` 폴더)와 Next.js 같은 프레임워크도
+버셀이 자동 감지해 빌드합니다. 실제로 `api/hello.js` 를 넣고 배포해
+요청마다 서버에서 실행되는 것을 확인했습니다.
+
+기존 프로젝트 폴더를 올리고 싶다면 그 폴더에서 `publish.sh` 를 쓰면 됩니다.
+
+## 윈도우에서 터미널이 어려운 사용자
+
+`start.cmd` 를 더블클릭하거나 PowerShell 에서 `.\start.cmd` 로 실행할 수
+있습니다. Git Bash 를 찾아 `start.sh` 에 넘겨 줍니다.
+
+★ `.cmd` 파일에는 한글을 넣지 마세요 ★ cmd.exe 가 UTF-8 한글을 잘못 읽어
+그 줄을 명령으로 실행하려 듭니다. 실제로 겪었습니다. 영문만 씁니다.
