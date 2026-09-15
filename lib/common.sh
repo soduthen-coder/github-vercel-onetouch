@@ -193,10 +193,17 @@ check_name() {
 #   ★ 함정 ★ vercel 은 목록 표를 stdout 이 아니라 stderr 로 내보냅니다.
 #   2>/dev/null 로 stderr 를 버리면 표가 통째로 사라져서 아무것도 못 찾습니다.
 #   그래서 2>&1 로 둘을 합쳐서 읽습니다.
+#   ★ 주소를 추측하지 않습니다 ★
+#   예전에는 못 찾으면 "https://<이름>.vercel.app" 으로 추측했습니다. 그런데
+#   그 주소는 남이 이미 쓰고 있을 수 있습니다. 실제로 speed-test 라는 이름으로
+#   만들었더니 speed-test.vercel.app 은 생판 남의 사이트였고, 버셀은 겹치지
+#   않는 speed-test-five-fawn.vercel.app 을 새로 배정했습니다.
+#   추측한 주소를 확인하면 "남의 사이트 상태"를 내 것인 양 보고하게 됩니다.
+#   그래서 못 찾으면 빈 값을 돌려주고, 부르는 쪽에서 처리합니다.
 site_url() {
   local name="$1" url
   url="$(vc project ls 2>&1 | awk -v n="$name" '$1==n {print $2}' | head -1 || true)"
-  if [ -n "$url" ]; then printf '%s' "$url"; else printf 'https://%s.vercel.app' "$name"; fi
+  printf '%s' "$url"
 }
 
 # ----------------------------------------------------------------------------

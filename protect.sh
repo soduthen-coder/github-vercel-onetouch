@@ -93,15 +93,26 @@ fi
 # ----------------------------------------------------------------------------
 step "로그인하지 않은 상태로 실제 접속해 확인"
 SITE="$(site_url "$NAME")"
-SEEN="$(page_title "$SITE")"
 
-case "$SEEN" in
-  *Login*) STATE="잠김 — 로그인해야 보임" ;;
-  "")      STATE="응답 없음 (배포가 아직 없을 수 있습니다)" ;;
-  *)       STATE="공개 — 누구나 열림" ;;
-esac
+# 주소를 못 찾으면 추측하지 않습니다. 추측한 주소가 남의 사이트일 수 있어서,
+# 엉뚱한 사이트 상태를 내 것인 양 보고하게 됩니다.
+if [ -z "$SITE" ]; then
+  SEEN=""
+  STATE="배포를 찾을 수 없습니다 (아직 배포 전이거나 이름이 다를 수 있습니다)"
+  SITE="—"
+else
+  SEEN="$(page_title "$SITE")"
+  case "$SEEN" in
+    *Login*) STATE="잠김 — 로그인해야 보임" ;;
+    "")      STATE="응답 없음" ;;
+    *)       STATE="공개 — 누구나 열림" ;;
+  esac
+fi
 
-REPOVIS="$("$GH" api "/repos/$GH_OWNER/$NAME" --jq .visibility 2>/dev/null || echo '(저장소 없음)')"
+# --jq 는 실패해도 오류 본문을 stdout 으로 뱉기 때문에, 그것까지 버려야
+# "(저장소 없음)" 대신 404 JSON 이 그대로 찍히는 일을 막을 수 있습니다.
+REPOVIS="$("$GH" api "/repos/$GH_OWNER/$NAME" --jq .visibility 2>/dev/null)" || REPOVIS=""
+[ -n "$REPOVIS" ] || REPOVIS="(저장소 없음)"
 
 printf '\n─────────────────────────────────────────────\n'
 printf ' 사이트  %s\n' "$SITE"

@@ -123,17 +123,13 @@ cat > README.md <<MD
 
 정적 사이트입니다. \`index.html\` 하나로 동작하며 빌드 설정이 없습니다.
 
-## 고치고 반영하기
+\`index.html\` 을 고친 뒤 도구 폴더에서 아래를 실행하면 깃허브와 버셀에
+함께 반영됩니다.
 
 \`\`\`bash
-bash "$TOOLS/publish.sh" --dir "$DIR" "무엇을 고쳤는지"
-\`\`\`
-
-## 공개 범위 바꾸기
-
-\`\`\`bash
-bash "$TOOLS/protect.sh" $NAME on    # 잠금 (나만 보기)
-bash "$TOOLS/protect.sh" $NAME off   # 공개
+bash publish.sh --dir "$DIR" "무엇을 고쳤는지"
+bash protect.sh $NAME on     # 나만 보기
+bash protect.sh $NAME off    # 다시 공개
 \`\`\`
 MD
 

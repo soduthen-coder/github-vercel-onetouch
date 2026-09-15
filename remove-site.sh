@@ -54,8 +54,11 @@ else
   printf '  저장소  건너뜀 (--keep-repo)\n'
 fi
 
-if vc project ls 2>&1 | awk -v n="$NAME" '$1==n {found=1} END{exit !found}'; then
-  printf '  버셀    %s  (%s)\n' "$NAME" "$(site_url "$NAME")"
+# 지우고 나면 주소를 알아낼 방법이 없으므로, 지우기 전에 기억해 둡니다.
+# (추측한 주소는 남의 사이트일 수 있어 쓰지 않습니다.)
+SITE_BEFORE="$(site_url "$NAME")"
+if [ -n "$SITE_BEFORE" ]; then
+  printf '  버셀    %s  (%s)\n' "$NAME" "$SITE_BEFORE"
 else
   printf '  버셀    (없음)\n'
 fi
@@ -105,7 +108,23 @@ if "$GH" api "/repos/$GH_OWNER/$NAME" >/dev/null 2>&1; then
 else
   note "저장소 없음 ✓"
 fi
-CODE="$(http_code "$(site_url "$NAME")")"
-note "사이트 응답: HTTP $CODE  (404 면 내려간 것)"
+if [ -n "$SITE_BEFORE" ]; then
+  # 버셀은 삭제 직후 몇 초 동안 예전 내용을 계속 내려줍니다.
+  # 바로 확인하면 "아직 살아 있다"고 잘못 보고하게 되므로 몇 번 다시 봅니다.
+  CODE="000"
+  for _ in 1 2 3 4 5; do
+    CODE="$(http_code "$SITE_BEFORE")"
+    [ "$CODE" = "404" ] && break
+    sleep 3
+  done
+  if [ "$CODE" = "404" ]; then
+    note "사이트 내려감 ✓  (HTTP 404)"
+  else
+    note "사이트 응답: HTTP $CODE — 전파에 시간이 더 걸릴 수 있습니다."
+    note "잠시 뒤 다시 확인해 보세요:  curl -s -o /dev/null -w '%{http_code}' -L $SITE_BEFORE"
+  fi
+else
+  note "사이트: 원래 배포가 없었습니다"
+fi
 
 printf '\n완료: %s\n' "$NAME"
