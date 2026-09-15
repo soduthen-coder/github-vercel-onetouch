@@ -37,12 +37,41 @@ bash start.sh
 
 | 멈춘 지점 | 사용자에게 할 말 |
 |---|---|
-| git · Node.js 없음 | 받는 주소를 알려주고, 설치 후 **터미널을 껐다 켜라고** 안내 |
+| git · Node.js 없음 | **직접 설치해 주세요** (아래 참고). 안내만 하고 멈추지 마세요 |
 | 깃허브 로그인 화면 | 출력된 **8자리 코드를 크게 보여주고** https://github.com/login/device 안내 |
 | 버셀 로그인 | 브라우저에서 **Continue with GitHub** 를 고르라고 안내 |
 
 로그인 코드·비밀번호·토큰은 **절대 대신 입력하지 마세요.** 코드를 보여주고
 어디에 넣는지만 알려줍니다.
+
+### 사용자가 터미널을 모른다고 전제하세요
+
+"터미널에 붙여넣으세요" 라고 하면 거기서 멈춥니다. **명령은 Claude 가
+실행합니다.** 사용자에게 터미널을 열라고 시키지 마세요.
+
+사용자가 굳이 직접 하겠다고 할 때만 여는 법을 알려주고, 그때는
+윈도우 Git Bash 에서 `Ctrl+V` 가 듣지 않는다는 점(마우스 오른쪽 버튼으로
+붙여넣기)까지 함께 알려주세요. 모르면 명령을 넣지도 못합니다.
+
+### git 과 Node.js 가 없으면 직접 설치하세요
+
+사용자를 설치 페이지로 보내고 끝내지 마세요. **대상은 완전 초보입니다.**
+설치 파일을 받아 실행하는 것부터가 벽입니다. 명령으로 대신 깔아 주세요.
+
+```bash
+# 윈도우
+winget install --id Git.Git -e --accept-package-agreements --accept-source-agreements
+winget install --id OpenJS.NodeJS.LTS -e --accept-package-agreements --accept-source-agreements
+
+# 맥
+brew install git node
+```
+
+설치 뒤에는 새 셸에서 실행해야 PATH 가 잡힙니다. 같은 셸에서 `git` 이 아직
+안 보이면 절대경로를 찾아 쓰거나, 사용자에게 터미널을 껐다 켜 달라고 하세요.
+
+윈도우에서 `bash` 자체가 없다면 (= git 미설치) PowerShell 로 winget 을 먼저
+실행한 뒤에 bash 스크립트로 넘어가세요.
 
 ---
 
